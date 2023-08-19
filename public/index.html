@@ -5,8 +5,12 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+html {
+  touch-action: manipulation;
+}
+
 .App {
-  font-family: Arial, sans-serif;
+  font-family: 'Courier New', monospace;
   padding: 1rem;
   box-sizing: border-box;
   width: 210mm;
@@ -16,15 +20,27 @@
 
 .questions-container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 1rem;
 }
 
 .question {
   padding: 0.5rem;
-  border: 1px solid #ccc;
+  border: 0.5px solid #ccc;
   text-align: left;
-  font-size: 60px;
+  font-size: 25px;
+}
+
+.answer-canvas {
+  vertical-align: middle;
+  width: 60px;
+  height: 60px;
+}
+
+.number {
+  display: inline-block;
+  width: 2ch;
+  text-align: right;
 }
     </style>
     <title>10の合成</title>
