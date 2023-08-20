@@ -6,8 +6,41 @@ const generateQuestion = (targetNumber) => {
   return [a];
 };
 
-function Question({ number, targetNumber }) {
-  const [question] = useState(generateQuestion(targetNumber));
+const generateQuestions = (targetNumber, numOfQuestions) => {
+    let questionArray = [];
+    for (let i = 0; i < numOfQuestions; i++) {
+      questionArray.push(generateQuestion(targetNumber));
+    }
+  
+    return questionArray;
+};
+
+function Questions({ number, targetNumber, numOfQuestions }) {
+  const [questions, setQuestions] = useState(generateQuestions(targetNumber, numOfQuestions));
+
+  useEffect(() => {
+    setQuestions(generateQuestions(targetNumber, numOfQuestions));
+  }, [targetNumber, numOfQuestions]);
+
+  return (
+    <div className="questions">
+      {questions.map((q, index) => (
+        <Question key={index} number={index + 1} questionData={q} />
+      ))}
+    </div>
+  );
+}
+
+function Question({questionData}) {
+  return (
+    <div className="question">
+      <span className="number">{questionData[0]}</span> +
+      <Canvas />
+    </div>
+  );
+}
+
+function Canvas() {
   const canvasRef = useRef(null);
 
   const handlePointerDown = (e) => {
@@ -31,31 +64,23 @@ function Question({ number, targetNumber }) {
     canvas.removeEventListener('pointermove', handleDrawing);
     canvas.removeEventListener('pointerup', stopDrawing);
   };
-
+  
   return (
-    <div className="question">
-      <span><span className="number">{question[0]}</span> +
-      <canvas
-        ref={canvasRef}
-        width={60}
-        height={60}
-        onPointerDown={handlePointerDown}
-        className="answer-canvas"
-      />
-     </span>
-    </div>
+    <canvas ref={canvasRef} width={60} height={60} onPointerDown={handlePointerDown} className="answer-canvas"></canvas>
   );
 }
-
 
 function App() {
   const savedNum = Cookies.get('targetNumber');
   const defaultTargetNumber = 10;
   const numOfQuestions = 50;
+  const defaultFontSize = 25;
   const [targetNumber, setTargetNumber] = useState(savedNum ? savedNum : defaultTargetNumber);
   const [showSettings, setShowSettings] = useState(false);
-  const [isScrollDisabled, setIsScrollDisabled] = useState(false);
-  
+  const [refreshKey, setRefreshKey] = useState(Date.now());
+  const [isScrollingDisabled, setIsScrollingDisabled] = useState(false);
+  const [scale, setScale] = useState(1);
+
   useEffect(() => {
     const savedTargetNumber = Cookies.get('targetNumber');
     if (savedTargetNumber) {
@@ -63,26 +88,45 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
-    if (isScrollDisabled) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-  }, [isScrollDisabled]);
-
   const handleSaveSettings = () => {
     Cookies.set('targetNumber', targetNumber, { expires: 365 });
     setShowSettings(false);
   };
-  
-  const questions = Array.from({ length: numOfQuestions }).map((_, index) => <Question number={index + 1} key={index} targetNumber={targetNumber} />);
 
+  const handleToggleScroll = () => {
+    setIsScrollingDisabled(prevState => {
+      if (prevState) {
+        document.body.style.overflow = 'auto';
+      } else {
+        document.body.style.overflow = 'hidden';
+      }
+      return !prevState;
+    });
+  };
+
+  const zoomIn = () => {
+    setScale(prevScale => prevScale + 0.1);
+  };
+
+  const zoomOut = () => {
+    setScale(prevScale => prevScale - 0.1);
+  };
+
+  const regenerateQuestions = () => {
+    setRefreshKey(Date.now());
+  };
+  
   return (
-    <div className="App">
-      <button onClick={() => setIsScrollDisabled(!isScrollDisabled)}>
-        {isScrollDisabled ? 'Enable scroll' : 'Disable scroll'}
-      </button>
+      <div className="App">
+        <div className="fixed-controls">
+          <button onClick={handleToggleScroll}>
+            {isScrollingDisabled ? "Enable scroll" : "Disable scroll"}
+          </button>
+          <button onClick={zoomIn}> + </button>
+          <button onClick={zoomOut}> - </button>
+          <button onClick={regenerateQuestions}>recreate</button>
+          <button onClick={() => setShowSettings(true)}>Setting</button>
+        </div>
       {showSettings ? (
         <div className="settings">
           <label>
@@ -97,9 +141,12 @@ function App() {
         </div>
       ) : (
         <>
-          <button onClick={() => setShowSettings(true)}>Setting</button>
+          <div style={{ transform: `scale(${scale})` }}>
           <h2>{targetNumber}の合成 / Making {targetNumber}</h2>
-          <div className="questions-container">{questions}</div>
+          <div className="questions-container">
+            <Questions key={refreshKey} targetNumber={targetNumber} numOfQuestions={numOfQuestions} />
+          </div>
+          </div>
         </>
       )}
     </div>
